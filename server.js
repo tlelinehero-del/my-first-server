@@ -9,7 +9,7 @@ const server = http.createServer((req, res) => {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CR7 Quantum Profile & Mini-Game</title>
+<title>CR7 3D Parallax Quantum Card</title>
 
 <style>
 * {
@@ -26,36 +26,35 @@ body {
     align-items: center;
     overflow: hidden;
     position: relative;
+    /* รองรับเอฟเฟกต์ 3D ทั่วทั้งหน้าจอ */
+    perspective: 1500px; 
 }
 
-/* 🌌 พื้นหลังตารางเลเซอร์ Grid 3D */
-body::before {
-    content: "";
+/* 🌌 พื้นหลังตารางเลเซอร์ Grid 3D (จะขยับตามเมาส์ผ่าน JS) */
+.bg-grid {
     position: absolute;
-    width: 200%;
-    height: 200%;
-    top: -50%;
-    left: -50%;
+    width: 140%;
+    height: 140%;
+    top: -20%;
+    left: -20%;
     background-image: 
-        linear-gradient(rgba(0, 240, 255, 0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 240, 255, 0.05) 1px, transparent 1px);
-    background-size: 40px 40px;
-    transform: perspective(500px) rotateX(60deg);
-    animation: gridMove 20s linear infinite;
+        linear-gradient(rgba(0, 240, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 240, 255, 0.04) 1px, transparent 1px);
+    background-size: 50px 50px;
+    transform: perspective(500px) rotateX(60deg) translateY(0);
     z-index: 1;
+    transition: transform 0.2s ease-out;
 }
 
-@keyframes gridMove {
-    0% { transform: perspective(500px) rotateX(60deg) translateY(0); }
-    100% { transform: perspective(500px) rotateX(60deg) translateY(40px); }
-}
-
-/* ⚡ ตัวการ์ดแบบ 3D Flip (สลับโหมดโปรไฟล์ / เกม) */
+/* ⚡ ตัวครอบการ์ดแบบ 3D Tilt */
 .card-wrapper {
-    perspective: 1000px;
+    position: relative;
     z-index: 10;
+    transform-style: preserve-3d;
+    transition: transform 0.1s ease-out;
 }
 
+/* ตัวหมุนสลับหน้า (หน้าโปรไฟล์ / หน้าเกม) */
 .card-inner {
     width: 440px;
     height: 620px;
@@ -64,12 +63,12 @@ body::before {
     transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* เมื่อสลับโหมดจะหมุนการ์ด */
+/* เมื่อสลับโหมดจะหมุนการ์ด 180 องศา */
 .card-inner.flipped {
     transform: rotateY(180deg);
 }
 
-/* สไตล์พื้นฐานทั้งหน้าและหลังการ์ด */
+/* แผ่นหน้าและการ์ดหลัง */
 .card-face {
     position: absolute;
     width: 100%;
@@ -78,10 +77,11 @@ body::before {
     border-radius: 20px;
     overflow: hidden;
     background: #050510;
-    box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+    transform-style: preserve-3d;
 }
 
-/* ขอบเลเซอร์วิ่งรอบตัวการ์ด */
+/* ขอบเลเซอร์นีออนวิ่งรอบตัวการ์ด */
 .card-face::before {
     content: "";
     position: absolute;
@@ -92,6 +92,10 @@ body::before {
     background: conic-gradient(#00f0ff, #ff007f, #00f0ff);
     animation: laserRotate 4s linear infinite;
     z-index: 1;
+}
+
+@keyframes laserRotate {
+    100% { transform: rotate(360deg); }
 }
 
 .card-content {
@@ -106,10 +110,7 @@ body::before {
     flex-direction: column;
     justify-content: space-between;
     backdrop-filter: blur(10px);
-}
-
-@keyframes laserRotate {
-    100% { transform: rotate(360deg); }
+    transform: translateZ(50px); /* ดันเนื้อหาข้างในการ์ดให้ลอยเด่นขึ้นมามีมิติแบบ 3D Layer */
 }
 
 /* ================= FRONT: PROFILE PAGE ================= */
@@ -117,6 +118,7 @@ body::before {
     transform: rotateY(0deg);
 }
 
+/* โฮโลแกรมจำลองการสแกน */
 .hologram-avatar {
     width: 130px;
     height: 130px;
@@ -129,6 +131,7 @@ body::before {
     display: flex;
     justify-content: center;
     align-items: center;
+    transform: translateZ(30px); /* ดัน Avatar ให้ลอยขึ้นมาอีกระดับ */
 }
 
 .hologram-avatar::after {
@@ -175,6 +178,7 @@ h1 {
     background: linear-gradient(90deg, #00f0ff, #ff007f);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    transform: translateZ(25px);
 }
 
 .system-status {
@@ -196,6 +200,7 @@ h1 {
     align-items: center;
     position: relative;
     transition: 0.3s;
+    transform: translateZ(20px);
 }
 
 .data-slot::before {
@@ -209,7 +214,7 @@ h1 {
 .data-slot:hover {
     background: rgba(0, 240, 255, 0.08);
     border-color: #00f0ff;
-    transform: translateX(5px);
+    transform: translateZ(35px) scale(1.02); /* ดึงหน้าต่างที่ชี้เมาส์ให้ลอยพุ่งมาหาคนดูมากขึ้น */
 }
 
 .data-slot span {
@@ -241,7 +246,6 @@ h1 {
     margin-bottom: 10px;
 }
 
-/* ผืนผ้าใบเดาะบอล */
 #gameCanvas {
     background: #03030b;
     border: 2px solid rgba(255, 0, 127, 0.4);
@@ -250,6 +254,7 @@ h1 {
     display: block;
     margin: 0 auto;
     box-shadow: inset 0 0 15px rgba(0,0,0,0.8);
+    transform: translateZ(10px);
 }
 
 .game-instruction {
@@ -259,7 +264,7 @@ h1 {
     font-style: italic;
 }
 
-/* ================= COMMON CONTROLS ================= */
+/* ================= CONTROLS ================= */
 .action-button {
     margin-top: 15px;
     background: transparent;
@@ -273,13 +278,14 @@ h1 {
     cursor: pointer;
     transition: 0.3s;
     outline: none;
+    transform: translateZ(15px);
 }
 
 .action-button:hover {
     background: #ff007f;
     color: #000;
     box-shadow: 0 0 25px #ff007f;
-    transform: scale(1.05);
+    transform: translateZ(30px) scale(1.05);
 }
 
 .blue-btn {
@@ -296,10 +302,13 @@ h1 {
 </head>
 <body>
 
-<div class="card-wrapper">
+<!-- พื้นหลังตารางแบบขยับ 3D -->
+<div class="bg-grid" id="bgGrid"></div>
+
+<div class="card-wrapper" id="cardWrapper">
     <div class="card-inner" id="cardInner">
         
-        <!-- ================= หน้าการ์ด: หน้าโปรไฟล์ของคุณ ================= -->
+        <!-- ================= FRONT: PROFILE ================= -->
         <div class="card-face front-card">
             <div class="card-content">
                 <div class="hologram-avatar">
@@ -329,7 +338,7 @@ h1 {
             </div>
         </div>
 
-        <!-- ================= หลังการ์ด: มินิเกมเดาะบอล CR7 ================= -->
+        <!-- ================= BACK: MINI GAME ================= -->
         <div class="card-face back-card">
             <div class="card-content">
                 <div class="game-header">
@@ -337,7 +346,6 @@ h1 {
                     <div>HIGH SCORE: <span id="highScore" style="color:#00f0ff; font-weight:bold;">0</span></div>
                 </div>
 
-                <!-- พื้นที่สำหรับคลิกเดาะบอล -->
                 <canvas id="gameCanvas" width="370" height="320"></canvas>
                 <div class="game-instruction">คลิก/แตะที่ลูกบอลเพื่อเดาะเลี้ยงไม่ให้ตกพื้น!</div>
 
@@ -351,18 +359,61 @@ h1 {
 </div>
 
 <script>
-// ฟังก์ชันหมุนสลับหน้าการ์ด
+// ================= ระบบ 3D PARALLAX (ตรวจจับความเคลื่อนไหวเมาส์) =================
+const body = document.body;
+const cardWrapper = document.getElementById('cardWrapper');
+const bgGrid = document.getElementById('bgGrid');
+
+body.addEventListener('mousemove', (e) => {
+    // หาค่าศูนย์กลางของหน้าจอ
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+    
+    // คำนวณระยะทางที่เมาส์อยู่ห่างจากจุดศูนย์กลางหน้าจอ (-1 ถึง 1)
+    const deltaX = (e.clientX - centerX) / centerX;
+    const deltaY = (e.clientY - centerY) / centerY;
+    
+    // ตั้งค่าความเอียงของการ์ดตามเมาส์ (สูงสุดเอียงได้ 25 องศา)
+    const rotateY = deltaX * 25;
+    const rotateX = -deltaY * 25;
+    
+    // สั่งให้การ์ดเอียงแบบ 3D
+    cardWrapper.style.transform = \`rotateX(\${rotateX}deg) rotateY(\${rotateY}deg)\`;
+    
+    // ขยับพื้นหลังกริดไปในทิศทางตรงกันข้าม เพื่อสร้างมิติชัดตื้น (Parallax)
+    const bgX = -deltaX * 30;
+    const bgY = -deltaY * 30;
+    bgGrid.style.transform = \`perspective(500px) rotateX(60deg) translate(\${bgX}px, \${bgY}px)\`;
+});
+
+// เมื่อเมาส์ออกนอกหน้าจอ ให้ปรับการ์ดและฉากหลังกลับคืนจุดสมดุลช้า ๆ
+body.addEventListener('mouseleave', () => {
+    cardWrapper.style.transition = 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+    cardWrapper.style.transform = 'rotateX(0deg) rotateY(0deg)';
+    
+    bgGrid.style.transition = 'transform 0.5s ease-out';
+    bgGrid.style.transform = 'perspective(500px) rotateX(60deg) translate(0px, 0px)';
+    
+    // ปรับกลับไปเป็นโหมดจับแบบรวดเร็วเมื่อเมาส์กลับเข้ามาใหม่
+    setTimeout(() => {
+        cardWrapper.style.transition = 'transform 0.1s ease-out';
+        bgGrid.style.transition = 'transform 0.2s ease-out';
+    }, 500);
+});
+
+
+// ================= ระบบสลับหน้าการ์ด =================
 function toggleCard() {
     const card = document.getElementById('cardInner');
     card.classList.toggle('flipped');
     
-    // ถ้าหมุนมาฝั่งเกม ให้เริ่มระบบเกมใหม่ทันที
     if(card.classList.contains('flipped')) {
         resetGame();
     }
 }
 
-// ================= ระบบเกมเดาะบอล (Pure JS Canvas) =================
+
+// ================= ระบบเกมเดาะบอล =================
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
@@ -373,16 +424,15 @@ let ball = {
     vx: 2,
     vy: 0,
     gravity: 0.35,
-    bounce: -9 // แรงส่งเมื่อโดนเตะขึ้น
+    bounce: -9
 };
 
 let score = 0;
 let highScore = 0;
 let isGameOver = false;
 let gameStarted = false;
-let siuTextTimer = 0; // แสดงเอฟเฟกต์คำว่า SIUUU!
+let siuTextTimer = 0;
 
-// ตรวจจับการคลิกบนหน้าจอ Canvas
 canvas.addEventListener('mousedown', function(e) {
     handleInGameClick(e);
 });
@@ -412,17 +462,12 @@ function handleInGameClick(e) {
         return;
     }
 
-    // คำนวณระยะห่างจุดคลิกถึงลูกบอล
     const dist = Math.hypot(clickX - ball.x, clickY - ball.y);
 
-    // ถ้ากดโดนลูกบอล (ยอมให้กดง่ายขึ้นโดยบวกเพิ่มรัศมีอีกนิด)
     if (dist < ball.radius + 25) {
-        // ผลักบอลขึ้น
         ball.vy = ball.bounce;
-        // ส่งแรงออกซ้ายขวาตามจุดที่กดโดนบอล
         ball.vx = (ball.x - clickX) * 0.4;
         
-        // คะแนนเพิ่ม
         score++;
         document.getElementById('currentScore').innerText = score;
         if (score > highScore) {
@@ -430,7 +475,6 @@ function handleInGameClick(e) {
             document.getElementById('highScore').innerText = highScore;
         }
 
-        // เปิดโหมดคำว่า SIUUU! เด้งสู้หน้าจอ
         siuTextTimer = 30;
     }
 }
@@ -447,22 +491,16 @@ function resetGame() {
     siuTextTimer = 0;
 }
 
-// วงรอบอัปเดตและแสดงผลกราฟิกเกม (60fps)
 function update() {
-    // ล้างหน้าจอทุกเฟรม
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (!gameStarted && !isGameOver) {
-        // แสดงคำว่าแตะเพื่อเริ่มเล่น
         ctx.fillStyle = "#00f0ff";
         ctx.font = "bold 20px monospace";
         ctx.textAlign = "center";
         ctx.fillText("CLICK TO START GAME", canvas.width / 2, canvas.height / 2);
-        
-        // วาดบอลอยู่นิ่ง ๆ รอ
         drawBall();
     } else if (isGameOver) {
-        // หน้าจอ Game Over
         ctx.fillStyle = "#ff007f";
         ctx.font = "bold 26px 'Impact', sans-serif";
         ctx.textAlign = "center";
@@ -472,12 +510,10 @@ function update() {
         ctx.font = "14px monospace";
         ctx.fillText("CLICK TO RESTART", canvas.width / 2, canvas.height / 2 + 20);
     } else {
-        // ย้ายตำแหน่งลูกบอล
         ball.vy += ball.gravity;
         ball.x += ball.vx;
         ball.y += ball.vy;
 
-        // ชนขอบซ้ายขวาให้เด้งกลับ
         if (ball.x - ball.radius < 0) {
             ball.x = ball.radius;
             ball.vx = -ball.vx * 0.8;
@@ -487,15 +523,12 @@ function update() {
             ball.vx = -ball.vx * 0.8;
         }
 
-        // ตกพื้น = แพ้ (Game Over)
         if (ball.y + ball.radius > canvas.height) {
             isGameOver = true;
         }
 
-        // วาดบอลฟุตบอลนีออนสีชมพูขาว
         drawBall();
 
-        // เอฟเฟกต์ "SIUUU!" ลอยขึ้นเมื่อเดาะโดน
         if (siuTextTimer > 0) {
             ctx.fillStyle = "#ffd700";
             ctx.font = "bold 28px 'Impact', sans-serif";
@@ -509,13 +542,11 @@ function update() {
 }
 
 function drawBall() {
-    // แสงเรืองแสงใต้ลูกบอล (Neon Glow)
     ctx.beginPath();
     ctx.arc(ball.x, ball.y, ball.radius + 10, 0, Math.PI * 2);
     ctx.fillStyle = "rgba(255, 0, 127, 0.25)";
     ctx.fill();
 
-    // ตัวลูกบอลหลัก
     ctx.beginPath();
     ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
     ctx.fillStyle = "#ff007f";
@@ -524,14 +555,12 @@ function drawBall() {
     ctx.fill();
     ctx.stroke();
 
-    // ลวดลายฟุตบอลสไตล์ไซไฟ
     ctx.beginPath();
     ctx.arc(ball.x, ball.y, ball.radius - 8, 0, Math.PI * 2);
     ctx.strokeStyle = "rgba(255,255,255,0.4)";
     ctx.stroke();
 }
 
-// รันระเบิดความมันส์ของเกม
 update();
 </script>
 
@@ -542,5 +571,5 @@ update();
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`Ultimate Gaming Profile Server is running on port ${PORT}`);
+    console.log(`Ultimate 3D Parallax Server is running on port ${PORT}`);
 });
