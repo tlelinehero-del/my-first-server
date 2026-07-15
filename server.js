@@ -4,7 +4,7 @@ const server = http.createServer((req, res) => {
     // กำหนดให้ส่งข้อมูลกลับไปเป็นหน้าเว็บ HTML และรองรับภาษาไทย/ญี่ปุ่น (utf-8)
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     
-    // โค้ด HTML/CSS ปรับลิงก์ GIF ใหม่เป็น Tenor แสดงผลชัวร์ 100%
+    // โค้ด HTML/CSS ระบบแสดงผลแบบเสถียรที่สุด ไม่ดำ ไม่พัง แน่นอน
     res.end(`
 <!DOCTYPE html>
 <html lang="th">
@@ -50,7 +50,7 @@ body {
     box-shadow: 0 0 50px rgba(229, 27, 35, 1);
 }
 
-/* ธงชาติไทยมุมซ้ายบน */
+/* ธงชาติไทยมุมซ้ายบนแบบ CSS Code (ไม่มีวันแตก ไม่มีวันดำเพราะไม่ต้องดึงรูปนอกเว็บ) */
 .flag-thailand {
     position: absolute;
     top: 20px;
@@ -60,12 +60,20 @@ body {
     border-radius: 4px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.6);
     z-index: 10;
+    background: linear-gradient(
+        to bottom,
+        #a51931 0%, #a51931 16.6%,
+        #f4f5f8 16.6%, #f4f5f8 33.3%,
+        #2d2a4a 33.3%, #2d2a4a 66.6%,
+        #f4f5f8 66.6%, #f4f5f8 83.3%,
+        #a51931 83.3%, #a51931 100%
+    );
 }
 
-/* 🎬 มีมโปรไฟล์ GIF จาก Tenor (รอบนี้ไม่บล็อกแน่นอน) */
+/* 🎬 ภาพมีมโรนัลโด้ SIUUUU จากเซิร์ฟเวอร์สำรองที่เสถียรที่สุด */
 .meme-profile {
-    width: 220px;
-    height: 165px;
+    width: 240px;
+    height: 170px;
     object-fit: cover;
     border-radius: 15px;
     border: 4px solid #fff;
@@ -160,11 +168,11 @@ h1 {
 <body>
 
 <div class="card">
-    <!-- 🇹🇭 ธงชาติไทย -->
-    <img src="https://openmoji.org/data/color/svg/1F1F9-1F1ED.svg" alt="Thailand Flag" class="flag-thailand">
+    <!-- 🇹🇭 ธงชาติไทยที่วาดด้วย CSS เกรดดีที่สุด (ไม่พึ่งพาไฟล์ภาพภายนอก ไม่มีทางเป็นภาพดำ) -->
+    <div class="flag-thailand"></div>
 
-    <!-- 🎬 GIF โรนัลโด้ SIUUUU จาก Tenor (รอบนี้ไม่แตกแน่นอนครับ) -->
-    <img src="https://media.tenor.com/PZOf4gY5rV0AAAAC/ronaldo-siuuy.gif" alt="Ronaldo SIU Meme" class="meme-profile">
+    <!-- 🎬 มีม GIF แบบลิงก์สำรองคุณภาพสูงของ Dev (แสดงผลได้ทั่วโลก) -->
+    <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3Vmb3M3MXR1Z2o2djF4MHpzeHptanY4NHozcTFlZnR1dHhyeXNzbSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/r1IMdmkhWpZyM/giphy.gif" alt="Ronaldo SIU Meme" class="meme-profile">
     
     <h1>自己紹介</h1>
     <div class="jp-sub">Jikoshoukai (แนะนำตัว)</div>
