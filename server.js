@@ -1,8 +1,41 @@
 const http = require('http');
+const url = require('url');
+const { Pool } = require('pg');
 
-const server = http.createServer((req, res) => {
+// เชื่อมต่อฐานข้อมูลผ่าน Environment Variable ของ Railway
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+});
+
+const server = http.createServer(async (req, res) => {
+    const parsedUrl = url.parse(req.url, true);
+    const studentId = parsedUrl.query.id; // เรียกผ่าน /?id=69319011719 เพื่อดึงข้อมูลตาม ID ที่ต้องการ
+
+    // ค่าเริ่มต้น (กรณีดึงข้อมูลจากฐานข้อมูลไม่ได้)
+    let studentName = 'ธนดล แสงทอง';
+    let studentIdValue = '69319011719';
+
+    try {
+        const client = await pool.connect();
+        let result;
+        if (studentId) {
+            result = await client.query('SELECT * FROM students WHERE student_id = $1', [studentId]);
+        } else {
+            result = await client.query('SELECT * FROM students LIMIT 1');
+        }
+        client.release();
+
+        if (result.rows.length > 0) {
+            studentName = result.rows[0].student_name;
+            studentIdValue = result.rows[0].student_id;
+        }
+    } catch (err) {
+        console.error('Database error:', err.message);
+        // ถ้าเชื่อมต่อฐานข้อมูลไม่ได้ จะใช้ค่าเริ่มต้นด้านบนแทน
+    }
+
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-    
+
     res.end(`
 <!DOCTYPE html>
 <html lang="th">
@@ -26,18 +59,16 @@ body {
     align-items: center;
     overflow: hidden;
     position: relative;
-    /* รองรับเอฟเฟกต์ 3D ทั่วทั้งหน้าจอ */
-    perspective: 1500px; 
+    perspective: 1500px;
 }
 
-/* 🌌 พื้นหลังตารางเลเซอร์ Grid 3D (จะขยับตามเมาส์ผ่าน JS) */
 .bg-grid {
     position: absolute;
     width: 140%;
     height: 140%;
     top: -20%;
     left: -20%;
-    background-image: 
+    background-image:
         linear-gradient(rgba(0, 240, 255, 0.04) 1px, transparent 1px),
         linear-gradient(90deg, rgba(0, 240, 255, 0.04) 1px, transparent 1px);
     background-size: 50px 50px;
@@ -46,7 +77,6 @@ body {
     transition: transform 0.2s ease-out;
 }
 
-/* ⚡ ตัวครอบการ์ดแบบ 3D Tilt */
 .card-wrapper {
     position: relative;
     z-index: 10;
@@ -54,7 +84,6 @@ body {
     transition: transform 0.1s ease-out;
 }
 
-/* ตัวหมุนสลับหน้า (หน้าโปรไฟล์ / หน้าเกม) */
 .card-inner {
     width: 440px;
     height: 620px;
@@ -63,12 +92,10 @@ body {
     transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* เมื่อสลับโหมดจะหมุนการ์ด 180 องศา */
 .card-inner.flipped {
     transform: rotateY(180deg);
 }
 
-/* แผ่นหน้าและการ์ดหลัง */
 .card-face {
     position: absolute;
     width: 100%;
@@ -81,7 +108,6 @@ body {
     transform-style: preserve-3d;
 }
 
-/* ขอบเลเซอร์นีออนวิ่งรอบตัวการ์ด */
 .card-face::before {
     content: "";
     position: absolute;
@@ -110,15 +136,13 @@ body {
     flex-direction: column;
     justify-content: space-between;
     backdrop-filter: blur(10px);
-    transform: translateZ(50px); /* ดันเนื้อหาข้างในการ์ดให้ลอยเด่นขึ้นมามีมิติแบบ 3D Layer */
+    transform: translateZ(50px);
 }
 
-/* ================= FRONT: PROFILE PAGE ================= */
 .front-card {
     transform: rotateY(0deg);
 }
 
-/* โฮโลแกรมจำลองการสแกน */
 .hologram-avatar {
     width: 130px;
     height: 130px;
@@ -131,7 +155,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    transform: translateZ(30px); /* ดัน Avatar ให้ลอยขึ้นมาอีกระดับ */
+    transform: translateZ(30px);
 }
 
 .hologram-avatar::after {
@@ -214,7 +238,7 @@ h1 {
 .data-slot:hover {
     background: rgba(0, 240, 255, 0.08);
     border-color: #00f0ff;
-    transform: translateZ(35px) scale(1.02); /* ดึงหน้าต่างที่ชี้เมาส์ให้ลอยพุ่งมาหาคนดูมากขึ้น */
+    transform: translateZ(35px) scale(1.02);
 }
 
 .data-slot span {
@@ -229,7 +253,6 @@ h1 {
     font-size: 18px;
 }
 
-/* ================= BACK: GAME PAGE ================= */
 .back-card {
     transform: rotateY(180deg);
 }
@@ -264,7 +287,6 @@ h1 {
     font-style: italic;
 }
 
-/* ================= CONTROLS ================= */
 .action-button {
     margin-top: 15px;
     background: transparent;
@@ -302,12 +324,11 @@ h1 {
 </head>
 <body>
 
-<!-- พื้นหลังตารางแบบขยับ 3D -->
 <div class="bg-grid" id="bgGrid"></div>
 
 <div class="card-wrapper" id="cardWrapper">
     <div class="card-inner" id="cardInner">
-        
+
         <!-- ================= FRONT: PROFILE ================= -->
         <div class="card-face front-card">
             <div class="card-content">
@@ -316,18 +337,18 @@ h1 {
                 </div>
 
                 <div>
-                    <h1>THANADOL</h1>
+                    <h1>${studentName.split(' ')[0].toUpperCase()}</h1>
                     <div class="system-status">CR7.QUANTUM_SYS // ACTIVE</div>
                 </div>
 
                 <div class="info-group">
                     <div class="data-slot">
                         <span>USER_NAME</span>
-                        <b>ธนดล แสงทอง</b>
+                        <b>${studentName}</b>
                     </div>
                     <div class="data-slot">
                         <span>STUDENT_ID</span>
-                        <b>69319011719</b>
+                        <b>${studentIdValue}</b>
                     </div>
                 </div>
 
@@ -359,61 +380,49 @@ h1 {
 </div>
 
 <script>
-// ================= ระบบ 3D PARALLAX (ตรวจจับความเคลื่อนไหวเมาส์) =================
 const body = document.body;
 const cardWrapper = document.getElementById('cardWrapper');
 const bgGrid = document.getElementById('bgGrid');
 
 body.addEventListener('mousemove', (e) => {
-    // หาค่าศูนย์กลางของหน้าจอ
     const centerX = window.innerWidth / 2;
     const centerY = window.innerHeight / 2;
-    
-    // คำนวณระยะทางที่เมาส์อยู่ห่างจากจุดศูนย์กลางหน้าจอ (-1 ถึง 1)
+
     const deltaX = (e.clientX - centerX) / centerX;
     const deltaY = (e.clientY - centerY) / centerY;
-    
-    // ตั้งค่าความเอียงของการ์ดตามเมาส์ (สูงสุดเอียงได้ 25 องศา)
+
     const rotateY = deltaX * 25;
     const rotateX = -deltaY * 25;
-    
-    // สั่งให้การ์ดเอียงแบบ 3D
+
     cardWrapper.style.transform = \`rotateX(\${rotateX}deg) rotateY(\${rotateY}deg)\`;
-    
-    // ขยับพื้นหลังกริดไปในทิศทางตรงกันข้าม เพื่อสร้างมิติชัดตื้น (Parallax)
+
     const bgX = -deltaX * 30;
     const bgY = -deltaY * 30;
     bgGrid.style.transform = \`perspective(500px) rotateX(60deg) translate(\${bgX}px, \${bgY}px)\`;
 });
 
-// เมื่อเมาส์ออกนอกหน้าจอ ให้ปรับการ์ดและฉากหลังกลับคืนจุดสมดุลช้า ๆ
 body.addEventListener('mouseleave', () => {
     cardWrapper.style.transition = 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
     cardWrapper.style.transform = 'rotateX(0deg) rotateY(0deg)';
-    
+
     bgGrid.style.transition = 'transform 0.5s ease-out';
     bgGrid.style.transform = 'perspective(500px) rotateX(60deg) translate(0px, 0px)';
-    
-    // ปรับกลับไปเป็นโหมดจับแบบรวดเร็วเมื่อเมาส์กลับเข้ามาใหม่
+
     setTimeout(() => {
         cardWrapper.style.transition = 'transform 0.1s ease-out';
         bgGrid.style.transition = 'transform 0.2s ease-out';
     }, 500);
 });
 
-
-// ================= ระบบสลับหน้าการ์ด =================
 function toggleCard() {
     const card = document.getElementById('cardInner');
     card.classList.toggle('flipped');
-    
+
     if(card.classList.contains('flipped')) {
         resetGame();
     }
 }
 
-
-// ================= ระบบเกมเดาะบอล =================
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
@@ -467,7 +476,7 @@ function handleInGameClick(e) {
     if (dist < ball.radius + 25) {
         ball.vy = ball.bounce;
         ball.vx = (ball.x - clickX) * 0.4;
-        
+
         score++;
         document.getElementById('currentScore').innerText = score;
         if (score > highScore) {
@@ -505,7 +514,7 @@ function update() {
         ctx.font = "bold 26px 'Impact', sans-serif";
         ctx.textAlign = "center";
         ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 20);
-        
+
         ctx.fillStyle = "#fff";
         ctx.font = "14px monospace";
         ctx.fillText("CLICK TO RESTART", canvas.width / 2, canvas.height / 2 + 20);
@@ -571,5 +580,5 @@ update();
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`Ultimate 3D Parallax Server is running on port ${PORT}`);
+    console.log(`Ultimate 3D Parallax Server (with DB) is running on port ${PORT}`);
 });
