@@ -6,23 +6,43 @@ const { Pool } = require('pg');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// ⚠️ เช็คว่ามีการตั้งค่า DATABASE_URL หรือยัง (ถ้าไม่มี ระบบจะต่อฐานข้อมูลไม่ได้และ error จะขึ้นเป็น undefined)
-if (!process.env.DATABASE_URL) {
-  console.warn('⚠️  คำเตือน: ไม่พบ DATABASE_URL ในตัวแปรแวดล้อม (environment variable)');
-  console.warn('    กรุณาตั้งค่า DATABASE_URL ก่อนรัน เช่น:');
-  console.warn('    DATABASE_URL=postgres://user:pass@host:5432/dbname node server.js');
+// ⚠️ เช็คว่ามีการตั้งค่า DATABASE_URL หรือยัง (ถ้าไม่มี ระบบจะต่อฐานข้อมูลไม่ได้)
+const DB_URL_MISSING = !process.env.DATABASE_URL;
+if (DB_URL_MISSING) {
+  console.error('❌ ไม่พบ DATABASE_URL ในตัวแปรแวดล้อม (environment variable)');
+  console.error('   ถ้ารันบนเครื่องตัวเอง: ตั้งค่าก่อนรัน เช่น');
+  console.error('   DATABASE_URL=postgres://user:pass@host:5432/dbname node server.js');
+  console.error('   ถ้า deploy บน Render/Railway/Heroku: ไปที่หน้า Environment Variables ของโปรเจกต์แล้วเพิ่มตัวแปรชื่อ DATABASE_URL');
 }
 
 // 1. ตั้งค่าให้ Server อ่านข้อมูลที่ส่งมาจากฟอร์ม (HTML Form) ได้
 app.use(express.urlencoded({ extended: true }));
 
+// Middleware: ถ้าไม่มี DATABASE_URL เลย ให้บอกตรง ๆ ทุก route แทนที่จะปล่อยให้ error เป็น undefined
+app.use((req, res, next) => {
+  if (DB_URL_MISSING) {
+    return res.status(500).send(`
+      <div style="font-family: sans-serif; padding: 40px; text-align: center; color: #7a1f2b;">
+        <h2>⚔️ ไม่พบการตั้งค่าฐานข้อมูล (DATABASE_URL)</h2>
+        <p>ตัวแปรแวดล้อม <code>DATABASE_URL</code> ยังไม่ถูกตั้งค่าในระบบที่รัน server นี้อยู่เลย</p>
+        <p style="font-size: 13px; color: #999;">
+          ถ้ารันบนเครื่องตัวเอง ให้ตั้งค่าตัวแปรนี้ก่อนสั่งรัน<br>
+          ถ้า deploy บนแพลตฟอร์ม (Render / Railway / Heroku ฯลฯ) ให้ไปที่หน้า Settings → Environment Variables แล้วเพิ่ม DATABASE_URL ให้เป็น connection string ของฐานข้อมูล PostgreSQL ที่สร้างไว้
+        </p>
+      </div>
+    `);
+  }
+  next();
+});
+
 // 2. ตั้งค่าเชื่อมต่อฐานข้อมูล PostgreSQL
-const pool = new Pool({
+const pool = DB_URL_MISSING ? null : new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
 // เช็คการเชื่อมต่อตอนเริ่ม server และสร้างตาราง students อัตโนมัติถ้ายังไม่มี
 // (กันปัญหา "relation students does not exist" เวลา deploy ฐานข้อมูลใหม่)
+if (pool) {
 pool.connect()
   .then(async (client) => {
     console.log('✅ เชื่อมต่อฐานข้อมูลสำเร็จ');
@@ -44,6 +64,7 @@ pool.connect()
   .catch(err => {
     console.error('❌ เชื่อมต่อฐานข้อมูลไม่สำเร็จ:', err.message);
   });
+}
 
 // ---------------------------------------------------------
 // เส้นทางที่ 1: (GET /) เมื่อเปิดหน้าเว็บหลัก ให้แสดงฟอร์มและตารางข้อมูล
