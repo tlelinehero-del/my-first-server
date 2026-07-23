@@ -5,12 +5,34 @@ const express = require('express');
 const { Pool } = require('pg');
 const app = express();
 const port = process.env.PORT || 3000;
+
 // 1. ตั้งค่าให้ Server อ่านข้อมูลที่ส่งมาจากฟอร์ม (HTML Form) ได้
 app.use(express.urlencoded({ extended: true }));
+
 // 2. ตั้งค่าเชื่อมต่อฐานข้อมูล PostgreSQL
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
+
+// ✅ สร้างตารางอัตโนมัติถ้าไม่มีอยู่
+async function initializeDatabase() {
+  try {
+    const client = await pool.connect();
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS students (
+        id SERIAL PRIMARY KEY,
+        student_id VARCHAR(20) NOT NULL,
+        student_name VARCHAR(100) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    client.release();
+    console.log('✅ ฐานข้อมูลพร้อมใช้งาน');
+  } catch (err) {
+    console.error('❌ เกิดข้อผิดพลาดในการสร้างตาราง:', err.message);
+  }
+}
+
 // ---------------------------------------------------------
 // เส้นทางที่ 1: (GET /) เมื่อเปิดหน้าเว็บหลัก ให้แสดงฟอร์มและตารางข้อมูล
 // ---------------------------------------------------------
@@ -258,6 +280,10 @@ app.post('/delete', async (req, res) => {
 });
 
 // สั่งให้ Server เริ่มทำงาน
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+app.listen(port, async () => {
+  console.log(`🚀 Server is running on port ${port}`);
+  console.log(`📍 เปิดที่ http://localhost:${port}`);
+  
+  // ✅ เริ่มต้นฐานข้อมูลเมื่อ server เปิด
+  await initializeDatabase();
 });
