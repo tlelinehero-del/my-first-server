@@ -50,8 +50,8 @@ pool.connect()
       await client.query(`
         CREATE TABLE IF NOT EXISTS students (
           id SERIAL PRIMARY KEY,
-          student_id VARCHAR(20) NOT NULL,
-          student_name VARCHAR(255) NOT NULL
+          students_id VARCHAR(20) NOT NULL,
+          students_name VARCHAR(255) NOT NULL
         );
       `);
       console.log('✅ ตรวจสอบ/สร้างตาราง students เรียบร้อย');
@@ -284,8 +284,8 @@ app.get('/', async (req, res) => {
       html += `
     <tr>
       <td>${row.id}</td>
-      <td>${row.student_id}</td>
-      <td>${row.student_name}</td>
+      <td>${row.students_id}</td>
+      <td>${row.students_name}</td>
       <td style="text-align: center;">
         <form action="/delete" method="POST" style="margin:0;">
           <input type="hidden" name="id" value="${row.id}">
@@ -309,7 +309,7 @@ app.get('/', async (req, res) => {
       <div style="font-family: sans-serif; padding: 40px; text-align: center; color: #7a1f2b;">
         <h2>⚔️ เกิดข้อผิดพลาด</h2>
         <p>รายละเอียด: ${err.message || 'ไม่ทราบสาเหตุ (unknown error)'}</p>
-        <p style="font-size: 13px; color: #999;">ตรวจสอบว่าตาราง students มีอยู่จริงและมีคอลัมน์ student_id, student_name หรือไม่</p>
+        <p style="font-size: 13px; color: #999;">ตรวจสอบว่าตาราง students มีอยู่จริงและมีคอลัมน์ students_id, students_name หรือไม่</p>
       </div>
     `);
   }
@@ -324,7 +324,7 @@ app.post('/add', async (req, res) => {
   try {
     const client = await pool.connect();
     // คำสั่ง SQL สำหรับ Insert (ใช้ $1, $2 เพื่อป้องกันการโดนแฮกแบบ SQL Injection)
-    await client.query('INSERT INTO students (student_id, student_name) VALUES ($1, $2)', [student_id, student_name]);
+    await client.query('INSERT INTO students (students_id, students_name) VALUES ($1, $2)', [student_id, student_name]);
     client.release();
     res.redirect('/'); // บันทึกเสร็จ ให้เด้งกลับไปหน้าแรก
   } catch (err) {
